@@ -1,46 +1,30 @@
-# -*- coding: utf-8 -*-
-"""
-Application de vote électronique sécurisée (Interface Graphique)
-Projet de session: Cryptographie (8INF874) - UQAC
-Utilisation des bibliothèques officielles : 'phe' et 'pycryptodome'
-"""
-
 import customtkinter as ctk
-
-# --- IMPORTATIONS DES MODULES OFFICIELS DE CRYPTOGRAPHIE ---
 from phe import paillier
 from Crypto.PublicKey import RSA
 from Crypto.Signature import pkcs1_15
 from Crypto.Hash import SHA256
 
-# Configuration visuelle globale de CustomTkinter
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
-# =====================================================================
-# ENCAPSULATION DES MODULES OFFICIELS (Paillier & RSA)
-# =====================================================================
+#Gestion de Paillier et RSA
 class PaillierControleur:
     @staticmethod
     def generate_keys():
-        # Génère une paire de clés industrielles sécurisées
         return paillier.generate_paillier_keypair(n_length=2048)
 
     @staticmethod
     def encrypt(public_key, message):
-        # Utilise l'implémentation officielle pour chiffrer
         return public_key.encrypt(message)
 
     @staticmethod
     def decrypt(private_key, ciphertext):
-        # Déchiffre le score cumulé ou individuel
         return private_key.decrypt(ciphertext)
 
 
 class RSAControleur:
     @staticmethod
     def generate_keys():
-        # Génère une vraie clé RSA de 2048 bits conforme aux standards
         key = RSA.generate(2048)
         private_key = key
         public_key = key.publickey()
@@ -61,7 +45,6 @@ class RSAControleur:
         data_bytes = str(ciphertext_obj.ciphertext()).encode('utf-8')
         h = SHA256.new(data_bytes)
         try:
-            # Vérifie la validité de la signature selon le standard PKCS#1 v1.5
             pkcs1_15.new(public_key).verify(h, signature)
             return True
         except (ValueError, TypeError):
@@ -74,38 +57,32 @@ class ElecteurSimulation:
         self.nom = nom
         self.identite = f"{prenom} {nom}"
         self.mot_de_passe = mot_de_passe
-        # Initialisation via les clés officielles durcies
         self.pub_key_rsa, self.__priv_key_rsa = RSAControleur.generate_keys()
 
     def verifier_mot_de_passe(self, mdp_saisi):
         return self.mot_de_passe == mdp_saisi
 
     def voter(self, choix, cle_paillier_publique):
-        # Chiffrement officiel Paillier
         bulletin_c = PaillierControleur.encrypt(cle_paillier_publique, choix)
-        # Signature officielle RSA PKCS#1 v1.5
+
         signature = RSAControleur.sign(self.__priv_key_rsa, bulletin_c)
         return bulletin_c, signature
 
-
-# =====================================================================
-# INTERFACE GRAPHIQUE (GUI)
-# =====================================================================
+#Interface graphique
 class AppVoteEcheance(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Système de Vote Homomorphe - Spécifications Officielles")
+        self.title("Application de vote éléctronique")
         self.geometry("800x720")
         self.resizable(False, False)
 
-        # Initialisation sécurisée
         self.p_pub, self.p_priv = PaillierControleur.generate_keys()
         self.bulletins_acceptes = []
         self.emargement = set()
         self.liste_electorale = {}
         
-        # Liste officielle stable
+        #Liste des votants
         self.ajouter_individu_liste("Axel", "Grognet", "axel123")
         self.ajouter_individu_liste("Toto", "Test", "toto456")
         self.ajouter_individu_liste("Rémi", "Dambricourt", "remi789")
@@ -128,7 +105,7 @@ class AppVoteEcheance(ctk.CTk):
     def creer_ecran_connexion(self):
         self.nettoyer_container()
 
-        label_titre = ctk.CTkLabel(self.container, text="🗳️ Système de Vote Électronique (Production)", font=("Arial", 24, "bold"))
+        label_titre = ctk.CTkLabel(self.container, text="Système de Vote Électronique Sécurisé", font=("Arial", 24, "bold"))
         label_titre.pack(pady=20)
 
         frame_form = ctk.CTkFrame(self.container)
@@ -162,11 +139,11 @@ class AppVoteEcheance(ctk.CTk):
         identite_recherche = f"{prenom} {nom}".lower()
 
         if not prenom or not nom or not password:
-            self.label_status.configure(text="❌ Veuillez remplir tous les champs.")
+            self.label_status.configure(text="Veuillez remplir tous les champs.")
             return
 
         if identite_recherche in self.emargement:
-            self.label_status.configure(text="❌ Sécurité : Vous avez déjà émargé et voté !")
+            self.label_status.configure(text="Sécurité : Vous avez déjà émargé et voté !")
             return
 
         if identite_recherche in self.liste_electorale:
@@ -175,9 +152,9 @@ class AppVoteEcheance(ctk.CTk):
                 self.label_status.configure(text="") 
                 self.creer_ecran_isoloir(electeur)
             else:
-                self.label_status.configure(text="❌ Authentification échouée : Mot de passe incorrect.")
+                self.label_status.configure(text="Authentification échouée : Mot de passe incorrect.")
         else:
-            self.label_status.configure(text="❌ Accès refusé : Identité introuvable sur les listes.")
+            self.label_status.configure(text="Accès refusé : Identité introuvable sur les listes.")
 
     def creer_ecran_isoloir(self, electeur):
         self.nettoyer_container()
@@ -185,7 +162,7 @@ class AppVoteEcheance(ctk.CTk):
         label_user = ctk.CTkLabel(self.container, text=f"Isoloir de : {electeur.identite}", font=("Arial", 20, "bold"))
         label_user.pack(pady=15)
 
-        label_question = ctk.CTkLabel(self.container, text="Question : Approuvez-vous le prototype de cryptographie ?", font=("Arial", 15))
+        label_question = ctk.CTkLabel(self.container, text="Question : Avez vous apprécié le cours de Cryptographie ?", font=("Arial", 15))
         label_question.pack(pady=15)
 
         self.vote_var = ctk.StringVar(value="1")
@@ -207,15 +184,12 @@ class AppVoteEcheance(ctk.CTk):
         self.frame_actions_isoloir = ctk.CTkFrame(self.container, fg_color="transparent")
         self.frame_actions_isoloir.pack(pady=15, fill="x")
 
-        self.btn_voter = ctk.CTkButton(self.frame_actions_isoloir, text="Chiffrer & Envoyer (Format Industriel)", fg_color="green", hover_color="darkgreen", command=lambda: self.action_voter(electeur), height=40)
+        self.btn_voter = ctk.CTkButton(self.frame_actions_isoloir, text="Chiffrer & Envoyer", fg_color="green", hover_color="darkgreen", command=lambda: self.action_voter(electeur), height=40)
         self.btn_voter.pack(side="top", pady=5)
 
     def action_voter(self, electeur):
         choix = int(self.vote_var.get())
-        
         bulletin_c, signature = electeur.voter(choix, self.p_pub)
-
-        # Extraction de la valeur numérique brute du chiffrement officiel pour l'affichage hexadécimal
         cipher_hex = hex(bulletin_c.ciphertext())[:60] + "..."
         sig_hex = signature.hex()[:60] + "..."
 
@@ -235,8 +209,6 @@ class AppVoteEcheance(ctk.CTk):
     def traitement_urne_silencieux(self, identite, bulletin_c, signature):
         identite_cle = identite.lower()
         pub_key_rsa = self.liste_electorale[identite_cle].pub_key_rsa
-        
-        # Vérification robuste via PyCryptodome
         if RSAControleur.verify(pub_key_rsa, bulletin_c, signature):
             self.bulletins_acceptes.append(bulletin_c)
             self.emargement.add(identite_cle)
@@ -245,7 +217,7 @@ class AppVoteEcheance(ctk.CTk):
     def creer_ecran_urne(self):
         self.nettoyer_container()
 
-        label_titre = ctk.CTkLabel(self.container, text="📊 Tableau de bord de l'Urne", font=("Arial", 22, "bold"))
+        label_titre = ctk.CTkLabel(self.container, text="Tableau de bord de l'Urne", font=("Arial", 22, "bold"))
         label_titre.pack(pady=15)
 
         frame_list = ctk.CTkFrame(self.container)
@@ -266,11 +238,10 @@ class AppVoteEcheance(ctk.CTk):
         frame_crypto = ctk.CTkFrame(self.container)
         frame_crypto.pack(pady=10, padx=50, fill="x")
 
-        label_somme = ctk.CTkLabel(frame_crypto, text="État actuel de l'urne (Agrégation homomorphe via opérateur + de 'phe') :", font=("Arial", 12, "bold"))
+        label_somme = ctk.CTkLabel(frame_crypto, text="État actuel de l'urne (Homomorphisme Additif) :", font=("Arial", 12, "bold"))
         label_somme.pack(pady=5)
 
         if self.bulletins_acceptes:
-            # MAGIE DE 'PHE' : L'opérateur "+" est surchargé et gère la multiplication homomorphe automatiquement sous le capot !
             total_chiffre = self.bulletins_acceptes[0]
             for b in self.bulletins_acceptes[1:]:
                 total_chiffre = total_chiffre + b
@@ -281,7 +252,7 @@ class AppVoteEcheance(ctk.CTk):
         lbl_val_crypto = ctk.CTkLabel(frame_crypto, text=preview_text, text_color="cyan", wraplength=600, font=("Consolas", 11))
         lbl_val_crypto.pack(pady=5, padx=10)
 
-        btn_depouiller = ctk.CTkButton(self.container, text="🔒 Dépouiller l'urne (Déchiffrement Centralisé)", fg_color="#A349A4", hover_color="#803380", command=self.action_depouillement, height=40)
+        btn_depouiller = ctk.CTkButton(self.container, text=" Dépouiller l'urne (Déchiffrement Centralisé)", command=self.action_depouillement, height=40)
         btn_depouiller.pack(pady=10)
 
         btn_retour = ctk.CTkButton(self.container, text="Retour à l'accueil", fg_color="gray", command=self.creer_ecran_connexion)
@@ -295,12 +266,11 @@ class AppVoteEcheance(ctk.CTk):
         for b in self.bulletins_acceptes[1:]:
             total_chiffre = total_chiffre + b
 
-        # Déchiffrement officiel via la clé privée Paillier
         votes_oui = PaillierControleur.decrypt(self.p_priv, total_chiffre)
         total_votes = len(self.emargement)
         votes_non = total_votes - votes_oui
 
-        result_text = f"Total des bulletins : {total_votes}\n\n🟢 Votes OUI : {votes_oui}\n🔴 Votes NON : {votes_non}"
+        result_text = f"Total des bulletins : {total_votes}\n\n Votes OUI : {votes_oui}\n Votes NON : {votes_non}"
         
         msg_box = ctk.CTkToplevel(self)
         msg_box.title("Résultats officiels du scrutin")
